@@ -25,51 +25,56 @@ const App = () => {
   const [draggedItem, setDraggedItem] = useState(null);
 
   const addNewTask = () => {
-    if (newTask.trim() === "") return;
+    if (!newTask.trim()) return;
 
-    const updated = { ...columns };
-    updated[activeColumns].items.push({
-      id: Date.now().toString(),
-      content: newTask,
-    });
+    setColumns((prev) => ({
+      ...prev,
+      [activeColumns]: {
+        ...prev[activeColumns],
+        items: [
+          ...prev[activeColumns].items,
+          { id: Date.now().toString(), content: newTask },
+        ],
+      },
+    }));
 
-    setColumns(updated);
     setNewTask("");
   };
 
   const removeTask = (columnId, taskId) => {
-    const updated = { ...columns };
-    updated[columnId].items = updated[columnId].items.filter(
-      (i) => i.id !== taskId
-    );
-    setColumns(updated);
+    setColumns((prev) => ({
+      ...prev,
+      [columnId]: {
+        ...prev[columnId],
+        items: prev[columnId].items.filter((i) => i.id !== taskId),
+      },
+    }));
   };
 
   const handleDragStart = (columnId, item) => {
     setDraggedItem({ columnId, item });
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
-
   const handleDrop = (e, columnId) => {
     e.preventDefault();
     if (!draggedItem) return;
 
-    const { columnId: sourceColumnId, item } = draggedItem;
+    const { columnId: sourceId, item } = draggedItem;
+    if (sourceId === columnId) return;
 
-    if (sourceColumnId === columnId) return;
+    setColumns((prev) => {
+      const sourceItems = prev[sourceId].items.filter(
+        (i) => i.id !== item.id
+      );
+      const targetItems = [...prev[columnId].items, item];
 
-    const updated = { ...columns };
+      return {
+        ...prev,
+        [sourceId]: { ...prev[sourceId], items: sourceItems },
+        [columnId]: { ...prev[columnId], items: targetItems },
+      };
+    });
 
-    updated[sourceColumnId].items = updated[sourceColumnId].items.filter(
-      (i) => i.id !== item.id
-    );
-
-    updated[columnId].items.push(item);
-
-    setColumns(updated);
     setDraggedItem(null);
   };
 
@@ -89,85 +94,92 @@ const App = () => {
   };
 
   return (
-    <>
-      <div className="p-6 w-full min-h-screen bg-gradient-to-b from-zinc-900 to-zinc-800 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 w-full max-w-6xl">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-zinc-800 p-4 sm:p-6">
+      <div className="max-w-6xl mx-auto flex flex-col items-center gap-6">
 
-          <h1 className="text-6xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-rose-400">
-            KanBan Board
-          </h1>
+        {/* Title */}
+        <h1 className="text-4xl sm:text-6xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-rose-400">
+          KanBan Board
+        </h1>
 
-          {/* Add Task Section */}
-          <div className="mb-8 flex w-full max-w-lg shadow-lg rounded-lg overflow-hidden">
-            <input
-              type="text"
-              value={newTask}
-              onChange={(e) => setNewTask(e.target.value)}
-              placeholder="Add New Task"
-              className="flex-grow p-3 bg-zinc-700 text-white"
-              onKeyDown={(e) => e.key === "Enter" && addNewTask()}
-            />
+        {/* Add Task */}
+        <div className="w-full max-w-lg flex flex-col sm:flex-row rounded-lg overflow-hidden shadow-lg">
+          <input
+            type="text"
+            value={newTask}
+            onChange={(e) => setNewTask(e.target.value)}
+            placeholder="Add New Task"
+            className="flex-grow p-3 bg-zinc-700 text-white outline-none"
+            onKeyDown={(e) => e.key === "Enter" && addNewTask()}
+          />
 
-            <select
-              value={activeColumns}
-              onChange={(e) => setActiveColumns(e.target.value)}
-              className="p-3 bg-zinc-700 text-white border-0 border-l border-zinc-600"
-            >
-              {Object.keys(columns).map((columnId) => (
-                <option key={columnId} value={columnId}>
-                  {columns[columnId].name}
-                </option>
-              ))}
-            </select>
+          <select
+            value={activeColumns}
+            onChange={(e) => setActiveColumns(e.target.value)}
+            className="p-3 bg-zinc-700 text-white border-t sm:border-t-0 sm:border-l border-zinc-600"
+          >
+            {Object.keys(columns).map((id) => (
+              <option key={id} value={id}>
+                {columns[id].name}
+              </option>
+            ))}
+          </select>
 
-            <button
-              onClick={addNewTask}
-              className="px-6 bg-gradient-to-r from-yellow-600 to-amber-500 text-white font-medium hover:from-yellow-500 hover:to-amber-400 transition-all duration-200 cursor-pointer"
-            >
-              Add
-            </button>
-          </div>
+          <button
+            onClick={addNewTask}
+            className="p-3 sm:px-6 bg-gradient-to-r from-yellow-600 to-amber-500 text-white font-medium hover:from-yellow-500 hover:to-amber-400 transition"
+          >
+            Add
+          </button>
+        </div>
 
-          {/* Columns */}
-          <div className="flex gap-6 overflow-x-auto pb-6 w-full">
+        {/* Columns */}
+        <div className="w-full overflow-x-auto">
+          <div className="flex gap-4 sm:gap-6 pb-6">
             {Object.keys(columns).map((columnId) => (
               <div
                 key={columnId}
-                className={`flex-shrink-0 w-80 bg-zinc-800 rounded-lg shadow-xl border-t-4 ${columnStyles[columnId].border}`}
-                onDragOver={handleDragOver}
+                className={`w-72 sm:w-80 flex-shrink-0 bg-zinc-800 rounded-lg shadow-xl border-t-4 ${columnStyles[columnId].border}`}
+                onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleDrop(e, columnId)}
               >
-                {/* Column Header */}
+                {/* Header */}
                 <div
-                  className={`p-4 text-white font-bold text-xl rounded-t-md ${columnStyles[columnId].header}`}
+                  className={`p-4 text-white font-bold text-lg sm:text-xl rounded-t-md ${columnStyles[columnId].header}`}
                 >
                   {columns[columnId].name}
-                  <span className="ml-2 px-2 py-1 bg-zinc-800 bg-opacity-30 rounded-full text-sm">
+                  <span className="ml-2 px-2 py-1 bg-zinc-800 bg-opacity-30 rounded-full text-xs sm:text-sm">
                     {columns[columnId].items.length}
                   </span>
                 </div>
 
                 {/* Tasks */}
-                <div className="p-3 min-h-64">
+                <div className="p-3 min-h-[200px]">
                   {columns[columnId].items.length === 0 ? (
-                    <div className="text-center py-10 text-zinc-500 italic text-sm">
+                    <p className="text-center text-zinc-500 italic text-sm py-10">
                       Drop tasks here
-                    </div>
+                    </p>
                   ) : (
                     columns[columnId].items.map((item) => (
                       <div
                         key={item.id}
-                        className="p-4 mb-3 bg-zinc-700 text-white rounded-lg shadow-md cursor-move flex items-center justify-between transform transition-all duration-200 hover:scale-105 hover:shadow-lg"
                         draggable
-                        onDragStart={() => handleDragStart(columnId, item)}
+                        onDragStart={() =>
+                          handleDragStart(columnId, item)
+                        }
+                        className="p-3 mb-3 bg-zinc-700 text-white rounded-lg shadow-md flex justify-between items-center cursor-move transition hover:scale-[1.02]"
                       >
-                        <span>{item.content}</span>
+                        <span className="text-sm sm:text-base">
+                          {item.content}
+                        </span>
 
                         <button
-                          onClick={() => removeTask(columnId, item.id)}
-                          className="text-zinc-400 hover:text-red-400 transition-colors duration-200 w-6 h-6 flex items-center justify-center rounded-full hover:bg-zinc-600"
+                          onClick={() =>
+                            removeTask(columnId, item.id)
+                          }
+                          className="w-6 h-6 flex items-center justify-center rounded-full text-zinc-400 hover:text-red-400 hover:bg-zinc-600"
                         >
-                          <span className="text-lg cursor-pointer">x</span>
+                          ×
                         </button>
                       </div>
                     ))
@@ -177,8 +189,9 @@ const App = () => {
             ))}
           </div>
         </div>
+
       </div>
-    </>
+    </div>
   );
 };
 
