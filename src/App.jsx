@@ -98,7 +98,7 @@ const App = () => {
       <div className="max-w-6xl mx-auto flex flex-col items-center gap-6">
 
         {/* Title */}
-        <h1 className="text-4xl sm:text-6xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-500 to-rose-400">
+        <h1 className="text-4xl sm:text-6xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-blue-600 to-rose-400">
           KanBan Board
         </h1>
 
@@ -127,7 +127,7 @@ const App = () => {
 
           <button
             onClick={addNewTask}
-            className="p-3 sm:px-6 bg-gradient-to-r from-yellow-600 to-amber-500 text-white font-medium hover:from-yellow-500 hover:to-amber-400 transition"
+            className="p-3 sm:px-6 bg-gradient-to-r from-yellow-600 to-amber-500 text-white font-medium hover:from-yellow-500 hover:to-amber-400 transition cursor-pointer"
           >
             Add
           </button>
